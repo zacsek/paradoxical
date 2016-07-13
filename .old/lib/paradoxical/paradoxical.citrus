@@ -1,0 +1,118 @@
+grammar ParadoxicalGrammar
+	rule expressions
+		( expression | comment )* {
+			hash = {}
+			captures(:expression).each do |match|
+				hash.merge!(match.value) 
+			end
+			hash
+		}
+	end
+
+	rule expression
+		( space* key:scalar operator:(assign | less | more) space* value:(scalar | array | hash) comment?) { 
+			key = capture(:key).value.to_s
+			operator = capture(:operator).value.strip
+			value = capture(:value).value
+
+			hash = {}
+			if operator == '='
+				hash[:"#{key}"] = value
+			else
+				hash[:"#{key}"] = "#{operator} #{value}"
+			end
+			hash
+		}	
+	end
+
+	rule hash
+		( '{' space* expressions space* '}' space* ) {
+			capture(:expressions).value
+		}
+	end
+
+	rule array
+		( '{' ( space* (scalar|comment) space* )* '}' space* ) {
+			arr = []
+			captures(:scalar).flatten.each do |match|
+				arr << match.value
+			end
+			arr
+		}
+	end
+
+	rule assign
+		"=" space*
+	end
+
+	rule less
+		"<" space*
+	end
+
+	rule more
+		">" space*
+	end
+
+	rule scalar
+		( term:( date | float | integer | string ) space* ) { 
+			capture(:term).value
+		}
+	end
+
+	rule digit
+		[0-9]
+	end
+	
+	rule integer
+		( sign:'-'? nr:(digit+) ! /\w+/ ) {
+			nr = capture(:nr).value.to_i
+			nr = -nr if capture(:sign).value == '-'
+			nr
+		}
+	end
+
+	rule float
+		( sign:'-'? nr:(integer '.' integer) ) { 
+			nr = capture(:nr).value.to_f
+			nr = -nr if capture(:sign).value == '-'
+			nr
+		}
+	end
+
+	rule date
+		( y:(digit *4) '.' m:(digit 1*2) '.' d:(digit 1*2) ) {
+			y = capture(:y).value.to_i
+			m = capture(:m).value.to_i
+			d = capture(:d).value.to_i
+			Date.new(y, m, d)
+		}
+	end
+
+	rule string
+		qoutedstring | singleqoutestring | plainstring
+	end
+
+	rule qoutedstring
+		( '"' str:(/[^"]*/) '"' ) {
+			capture(:str).value
+		}
+	end
+
+	rule singleqoutestring
+		( "'" str:(/[^']*/) "'" ) {
+			capture(:str).value
+		}
+	end
+
+	rule plainstring
+		/[a-zA-Z0-9_\-\\\/!$%^&*.]+/
+	end
+
+	rule comment
+		space* /#.*/
+	end
+
+	rule space
+		/\s/
+	end
+end
