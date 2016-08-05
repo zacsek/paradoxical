@@ -62,11 +62,12 @@ module Paradoxical
 		include Singleton
 
 		def initialize
-			@citrus = Citrus.load('paradoxical.citrus').first
+		  fname = File.join(File.dirname(__FILE__), 'paradoxical.citrus')
+			@citrus = Citrus.load(fname, :consume => false).first
 		end
 
 		def parse(text)
-			ParadoxicalGrammar.parse(text).value
+			ParadoxicalGrammar.parse(text, :consume => false).value
 		end
 	end
 

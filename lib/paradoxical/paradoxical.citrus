@@ -1,13 +1,13 @@
 grammar ParadoxicalGrammar
 	rule expressions
-		( expression | comment )* {
+		( comment | expression )* {
 			hash = {}
 			captures(:expression).each do |match|
 				hval = match.value
 				key = hval.keys.first
 				if hash.has_key?(key)
 					arr = hash[key]
-					hash[key] = arr = [:multi, arr] unless arr.is_a? Array
+					hash[key] = arr = [:multi, arr] unless arr.is_a?(Array) && arr.first == :multi
 					arr << hval[key]
 				else
 					hash.merge!(hval) 
@@ -113,7 +113,7 @@ grammar ParadoxicalGrammar
 	end
 
 	rule plainstring
-		/[a-zA-Z0-9_\-\\\/!@$%^&*.]+/
+		/[a-zA-Z0-9_\-\\\/!:@$%^&*.]+/
 	end
 
 	rule comment

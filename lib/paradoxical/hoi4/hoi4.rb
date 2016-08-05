@@ -1,4 +1,4 @@
-$LOAD_PATH.unshift(*%w(. ..))
+$LOAD_PATH.unshift(*%w(. .. ../..))
 require 'paradoxical/paradoxical'
 require 'awesome_print'
 require 'date'
@@ -144,9 +144,15 @@ module Hoi4
 	end
 
 	class Mod
-		def self.create(name)
-			self.new(name)
+		def self.create(name, &block)
+			ctxt = self.new(name)
+			ctxt.instance_exec do
+			  block.call(self)
+      end
+      ctxt
 		end
+
+    attr_accessor :dirty_files
 
 		def initialize(name)
 			@name = name
@@ -170,14 +176,6 @@ module Hoi4
 			@dirty_files[:states].merge!(annex_states)
 		end
 
-		def buff_country
-			@dirty_files[:countries].each do |_,h|
-				h[:set_research_slots] = 6
-				h[:set_convoys] = 500
-				h[:set_national_unity] = 0.9
-			end
-		end
-
 		def buff_tech(opts = { :until => 1939 })
 			xtechs = @dirty_files[:countries].first[1][:set_technology]
 
@@ -191,40 +189,6 @@ module Hoi4
 				end.to_h
 				xtechs.merge!(ntechs)
 			end
-		end
-
-		def buff_states
-			@dirty_files[:states].each do |_,h|
-				h['xp:state/state_category'] = 'megalopolis'
-				h['xp:state/manpower'] = h['xp:state/manpower']  * 100
-				buildings = h['xp:state/history/buildings']
-				buildings[:infrastructure] = 10
-				buildings[:air_base] = 10
-				buildings[:anti_air_building] = 5
-				buildings[:industrial_complex] = 20
-				buildings[:arms_factory] = 20
-				buildings[:dockyard] = 10 if buildings[:dockyard]
-				buildings[:dockyard] = 10 if h['xp:state/history/add_core_of'] == "GRE"
-			end
-			resources = @dirty_files[:states]['43-Hungary.txt'][:state][:resources]
-			resources[:oil] = 1000
-			resources[:aluminium] = 1000
-			resources[:rubber] = 1000
-			resources[:tungsten] = 1000
-			resources[:steel] = 1000
-			resources[:chromium] = 1000
-			ap @dirty_files[:states]['43-Hungary.txt']
-		end
-
-		def buff
-			select_country(:hun)
-			annex(:yug)
-			annex(:gre)
-			annex(:alb)
-			buff_states
-			buff_country
-			buff_tech :until => 1945
-			save!
 		end
 
 		def save!
@@ -247,7 +211,3 @@ module Hoi4
 	end
 end
 
-if __FILE__ == $0
-	m = Hoi4::Mod.create 'hungary'
-	m.buff
-end

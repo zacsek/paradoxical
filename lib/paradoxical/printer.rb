@@ -47,9 +47,9 @@ module Paradoxical
 				when Array
 					if rhs.first == :multi
 						out = ""
-						rhs.shift
-						#binding.pry
-						rhs.each { |r| out += p_expression(lhs, r, lvl) }
+						arr = rhs.clone
+						arr.shift
+						arr.each { |r| out += p_expression(lhs, r, lvl) }
 					else
 						out += p_array(rhs, lvl+1)
 					end
